@@ -5,25 +5,62 @@ export function mapTransactionForAPI(tx: LedgerTransaction) {
   // Normalize type
   const type = tx.type === 'crypto_deposit' || tx.type === 'fiat_deposit' ? 'deposit' : tx.type;
 
-  const rawAmount = parseFloat(tx.amount || '0');
-  const amount = Math.abs(rawAmount);
-
   const price = tx.metadata?.price ? Number(tx.metadata.price) : null;
-  const total = price && (type === 'buy' || type === 'sell') ? Number((price * amount).toFixed(2)) : price && type === 'deposit' ? Number((price * amount).toFixed(2)) : null;
+
+  // Default asset and numeric amount from stored tx.amount
+  let asset = tx.asset;
+  let amount = Math.abs(Number(tx.amount || '0'));
+  let total: number | null = null;
+
+  if (type === 'buy' || type === 'sell') {
+    // Prefer an explicit crypto amount from metadata when available
+    let cryptoAmount: number | null = null;
+    if (tx.metadata?.crypto_amount) {
+      cryptoAmount = Number(tx.metadata.crypto_amount);
+    } else if (['SOL', 'USDC', 'ETH', 'BTC', 'USDT'].includes(tx.asset)) {
+      // Transaction already on crypto asset (e.g., buy credit)
+      cryptoAmount = Math.abs(Number(tx.amount || '0'));
+    } else if (price) {
+      // If tx.amount is fiat and price is known, derive crypto amount
+      cryptoAmount = Math.abs(Number(tx.amount || '0')) / price;
+    } else {
+      cryptoAmount = Math.abs(Number(tx.amount || '0'));
+    }
+
+    amount = cryptoAmount;
+
+    // For sells, prefer crypto asset from metadata (since tx.asset may be NGN)
+    if (tx.metadata?.crypto_asset) {
+      asset = tx.metadata.crypto_asset;
+    }
+
+    // Prefer explicit fiat total in metadata if present, otherwise compute from price
+    if (tx.metadata?.fiat_amount) {
+      total = Number(tx.metadata.fiat_amount);
+    } else if (price != null && cryptoAmount != null) {
+      total = price * cryptoAmount;
+    }
+  } else {
+    // deposit/other: use stored amount and compute total if price present
+    amount = Math.abs(Number(tx.amount || '0'));
+    if (price != null) {
+      total = price * amount;
+    }
+  }
 
   const txHash = tx.metadata?.tx_hash || tx.metadata?.signature || tx.reference || null;
 
   return {
     id: tx.id,
     type,
-    asset: tx.asset,
+    asset,
     amount,
     price: price ?? 0,
     total: total ?? 0,
     status: tx.status,
     timestamp: new Date(tx.created_at).getTime(),
     txHash,
-    raw: tx // keep original for debugging if needed
+    raw: tx
   };
 }
 
@@ -38,7 +75,7 @@ export async function formatBalancesForAPI(balances: Balance[]) {
 
   // Map balances to numeric values
   for (const b of balances) {
-    const amt = parseFloat(b.amount || '0');
+    const amt = Number(b.amount || '0');
     if (b.asset === 'NGN') {
       result.fiat.NGN = amt;
     } else {

@@ -21,19 +21,19 @@ router.post('/buy', authenticate, async (req: AuthRequest, res, next) => {
       throw new AppError(400, 'Invalid crypto asset. Supported: SOL, USDC');
     }
 
-    if (!fiatAmount || parseFloat(fiatAmount) <= 0) {
+    if (!fiatAmount || Number(fiatAmount) <= 0) {
       throw new InvalidAmountError();
     }
 
     // Get current price
     const price = await priceService.getPrice(cryptoAsset, 'NGN');
-    const cryptoAmount = parseFloat(fiatAmount) / price;
+    const cryptoAmount = Number(fiatAmount) / price;
 
     // Debit NGN balance
     await ledgerService.debit(
       userId,
       'NGN',
-      parseFloat(fiatAmount).toFixed(2),
+      Number(fiatAmount).toFixed(2),
       'buy',
       undefined,
       { 
@@ -59,8 +59,8 @@ router.post('/buy', authenticate, async (req: AuthRequest, res, next) => {
     );
 
     const balances = {
-      NGN: parseFloat(await ledgerService.getBalance(userId, 'NGN')),
-      [cryptoAsset]: parseFloat(await ledgerService.getBalance(userId, cryptoAsset))
+      NGN: Number(await ledgerService.getBalance(userId, 'NGN')),
+      [cryptoAsset]: Number(await ledgerService.getBalance(userId, cryptoAsset))
     };
 
     res.json({
@@ -94,19 +94,19 @@ router.post('/sell', authenticate, async (req: AuthRequest, res, next) => {
       throw new AppError(400, 'Invalid crypto asset. Supported: SOL, USDC');
     }
 
-    if (!cryptoAmount || parseFloat(cryptoAmount) <= 0) {
+    if (!cryptoAmount || Number(cryptoAmount) <= 0) {
       throw new InvalidAmountError();
     }
 
     // Get current price
     const price = await priceService.getPrice(cryptoAsset, 'NGN');
-    const fiatAmount = parseFloat(cryptoAmount) * price;
+    const fiatAmount = Number(cryptoAmount) * price;
 
     // Debit crypto balance
     await ledgerService.debit(
       userId,
       cryptoAsset,
-      parseFloat(cryptoAmount).toFixed(8),
+      Number(cryptoAmount).toFixed(8),
       'sell',
       undefined,
       { 
@@ -132,8 +132,8 @@ router.post('/sell', authenticate, async (req: AuthRequest, res, next) => {
     );
 
     const balances = {
-      NGN: parseFloat(await ledgerService.getBalance(userId, 'NGN')),
-      [cryptoAsset]: parseFloat(await ledgerService.getBalance(userId, cryptoAsset))
+      NGN: Number(await ledgerService.getBalance(userId, 'NGN')),
+      [cryptoAsset]: Number(await ledgerService.getBalance(userId, cryptoAsset))
     };
 
     res.json({

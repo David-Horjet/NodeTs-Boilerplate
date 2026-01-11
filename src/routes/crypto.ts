@@ -66,13 +66,13 @@ router.post('/withdraw', authenticate, async (req: AuthRequest, res, next) => {
       throw new AppError(400, 'Missing required fields: toAddress, amount');
     }
 
-    if (parseFloat(amount) <= 0) {
+    if (Number(amount) <= 0) {
       throw new InvalidAmountError();
     }
 
     // Minimum withdrawal amount (to cover fees)
     const MIN_WITHDRAWAL = 0.01;
-    if (parseFloat(amount) < MIN_WITHDRAWAL) {
+    if (Number(amount) < MIN_WITHDRAWAL) {
       throw new AppError(400, `Minimum withdrawal amount is ${MIN_WITHDRAWAL} SOL`);
     }
 
@@ -80,18 +80,18 @@ router.post('/withdraw', authenticate, async (req: AuthRequest, res, next) => {
     const signature = await blockchainService.processWithdrawal(
       userId,
       toAddress,
-      parseFloat(amount)
+      Number(amount)
     );
 
     const newBalanceStr = await ledgerService.getBalance(userId, 'SOL');
-    const newBalance = parseFloat(newBalanceStr);
+    const newBalance = Number(newBalanceStr);
 
     // Create a minimal transaction object for API consumers
     const apiTx = {
       id: signature,
       type: 'withdraw',
       asset: 'SOL',
-      amount: parseFloat(amount),
+      amount: Number(amount),
       status: 'pending',
       timestamp: Date.now(),
       txHash: signature,
@@ -122,7 +122,7 @@ router.get('/balance/:asset', authenticate, async (req: AuthRequest, res, next) 
     }
 
     const balanceStr = await ledgerService.getBalance(userId, asset.toUpperCase() as any);
-    const balance = parseFloat(balanceStr);
+    const balance = Number(balanceStr);
 
     res.json({
       asset: asset.toUpperCase(),

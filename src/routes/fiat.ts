@@ -15,7 +15,7 @@ router.post('/deposit', authenticate, async (req: AuthRequest, res, next) => {
     const { amount } = req.body;
     const userId = req.userId!;
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || Number(amount) <= 0) {
       throw new InvalidAmountError();
     }
 
@@ -26,14 +26,14 @@ router.post('/deposit', authenticate, async (req: AuthRequest, res, next) => {
     const transaction = await ledgerService.credit(
       userId,
       'NGN',
-      parseFloat(amount).toFixed(2),
+      Number(amount).toFixed(2),
       'fiat_deposit',
       reference,
       { method: 'simulated', note: 'Demo deposit - no real payment processed' }
     );
 
     const newBalanceStr = await ledgerService.getBalance(userId, 'NGN');
-    const newBalance = parseFloat(newBalanceStr);
+    const newBalance = Number(newBalanceStr);
     const apiTx = mapTransactionForAPI(transaction);
 
     res.json({
@@ -68,7 +68,7 @@ router.post('/withdraw', authenticate, async (req: AuthRequest, res, next) => {
     const { amount, destination } = req.body;
     const userId = req.userId!;
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || Number(amount) <= 0) {
       throw new InvalidAmountError();
     }
 
@@ -76,14 +76,14 @@ router.post('/withdraw', authenticate, async (req: AuthRequest, res, next) => {
     const transaction = await ledgerService.debit(
       userId,
       'NGN',
-      parseFloat(amount).toFixed(2),
+      Number(amount).toFixed(2),
       'withdraw',
       undefined,
       { destination }
     );
 
     const newBalanceStr = await ledgerService.getBalance(userId, 'NGN');
-    const newBalance = parseFloat(newBalanceStr);
+    const newBalance = Number(newBalanceStr);
     const apiTx = mapTransactionForAPI(transaction);
 
     res.json({

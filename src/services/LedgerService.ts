@@ -57,7 +57,7 @@ export class LedgerService {
     reference?: string,
     metadata?: Record<string, any>
   ): Promise<LedgerTransaction> {
-    if (parseFloat(amount) <= 0) {
+    if (Number(amount) <= 0) {
       throw new InvalidAmountError();
     }
 
@@ -79,7 +79,7 @@ export class LedgerService {
     }
 
     // Increment balance
-    const newAmount = (parseFloat(balance.amount) + parseFloat(amount)).toFixed(8);
+    const newAmount = (Number(balance.amount) + Number(amount)).toFixed(8);
     
     const { error: updateError } = await supabaseAdmin
       .from('balances')
@@ -124,12 +124,12 @@ export class LedgerService {
     reference?: string,
     metadata?: Record<string, any>
   ): Promise<LedgerTransaction> {
-    if (parseFloat(amount) <= 0) {
+    if (Number(amount) <= 0) {
       throw new InvalidAmountError();
     }
 
     const currentBalance = await this.getBalance(userId, asset);
-    const newAmount = parseFloat(currentBalance) - parseFloat(amount);
+    const newAmount = Number(currentBalance) - Number(amount);
 
     if (newAmount < 0) {
       throw new InsufficientBalanceError(asset);
