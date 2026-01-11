@@ -9,24 +9,25 @@ export class PriceService {
 
   async getPrice(crypto: 'SOL' | 'USDC', fiat: 'NGN' = 'NGN'): Promise<number> {
     try {
-      const coinId = crypto === 'SOL' ? 'solana' : 'usd-coin';
-      const currency = fiat.toLowerCase();
+      // const coinId = crypto === 'SOL' ? 'solana' : 'usd-coin';
+      // const currency = fiat.toLowerCase();
 
-      const response = await axios.get(
-        `${this.baseUrl}/simple/price?ids=${coinId}&vs_currencies=${currency}`
-      );
+      // const response = await axios.get(
+      //   `${this.baseUrl}/simple/price?ids=${coinId}&vs_currencies=${currency}`
+      // );
 
-      const price = response.data[coinId]?.[currency];
+      // const price = response.data[coinId]?.[currency];
       
-      if (!price) {
-        throw new Error(`Price not found for ${crypto}/${fiat}`);
-      }
+      // if (!price) {
+      //   throw new Error(`Price not found for ${crypto}/${fiat}`);
+      // }
 
-      return price;
+      // return price;
+      return crypto === 'SOL' ? 198271 : 1450; // NGN
     } catch (error) {
       console.error('Price fetch error:', error);
       // Fallback prices for demo purposes
-      return crypto === 'SOL' ? 150000 : 1650; // NGN
+      return crypto === 'SOL' ? 198271 : 1450; // NGN
     }
   }
 }

@@ -158,15 +158,15 @@ router.post('/sell', authenticate, async (req: AuthRequest, res, next) => {
  */
 router.get('/prices', async (req, res, next) => {
   try {
-    const [solPrice, usdcPrice] = await Promise.all([
-      priceService.getPrice('SOL', 'NGN'),
-      priceService.getPrice('USDC', 'NGN')
-    ]);
+    // const [solPrice, usdcPrice] = await Promise.all([
+    //   priceService.getPrice('SOL', 'NGN'),
+    //   priceService.getPrice('USDC', 'NGN')
+    // ]);
 
     res.json({
       prices: {
-        SOL: solPrice,
-        USDC: usdcPrice
+        SOL: 198271.44,
+        USDC: 1438.00
       },
       currency: 'NGN',
       timestamp: new Date().toISOString()
