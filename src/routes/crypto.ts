@@ -4,6 +4,7 @@ import { walletService } from '../services/WalletService';
 import { blockchainService } from '../services/BlockchainService';
 import { ledgerService } from '../services/LedgerService';
 import { AppError, InvalidAmountError } from '../utils/errors';
+import { mapTransactionForAPI, formatBalancesForAPI } from '../utils/serializers';
 
 const router = Router();
 
@@ -40,10 +41,12 @@ router.get('/deposits', authenticate, async (req: AuthRequest, res, next) => {
     const transactions = await ledgerService.getTransactions(userId);
     
     const deposits = transactions.filter(tx => tx.type === 'crypto_deposit');
+    // Map to API transaction shape
+    const mapped = deposits.map(mapTransactionForAPI);
 
     res.json({
-      deposits,
-      count: deposits.length
+      deposits: mapped,
+      count: mapped.length
     });
   } catch (error) {
     next(error);
@@ -80,15 +83,26 @@ router.post('/withdraw', authenticate, async (req: AuthRequest, res, next) => {
       parseFloat(amount)
     );
 
+    const newBalanceStr = await ledgerService.getBalance(userId, 'SOL');
+    const newBalance = parseFloat(newBalanceStr);
+
+    // Create a minimal transaction object for API consumers
+    const apiTx = {
+      id: signature,
+      type: 'withdraw',
+      asset: 'SOL',
+      amount: parseFloat(amount),
+      status: 'pending',
+      timestamp: Date.now(),
+      txHash: signature,
+      explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
+    };
+
     res.json({
       message: 'Withdrawal successful',
-      transaction: {
-        signature,
-        amount,
-        toAddress,
-        explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`
-      },
-      balance: await ledgerService.getBalance(userId, 'SOL')
+      transaction: apiTx,
+      txHash: signature,
+      newBalance
     });
   } catch (error) {
     next(error);
@@ -107,7 +121,8 @@ router.get('/balance/:asset', authenticate, async (req: AuthRequest, res, next) 
       throw new AppError(400, 'Invalid asset. Supported: SOL, USDC');
     }
 
-    const balance = await ledgerService.getBalance(userId, asset.toUpperCase() as any);
+    const balanceStr = await ledgerService.getBalance(userId, asset.toUpperCase() as any);
+    const balance = parseFloat(balanceStr);
 
     res.json({
       asset: asset.toUpperCase(),
@@ -125,11 +140,9 @@ router.get('/balances', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const userId = req.userId!;
     const balances = await ledgerService.getAllBalances(userId);
+    const formatted = await formatBalancesForAPI(balances);
 
-    res.json({
-      balances,
-      timestamp: new Date().toISOString()
-    });
+    res.json(formatted);
   } catch (error) {
     next(error);
   }
@@ -144,10 +157,11 @@ router.get('/transactions', authenticate, async (req: AuthRequest, res, next) =>
     const limit = parseInt(req.query.limit as string) || 50;
     
     const transactions = await ledgerService.getTransactions(userId, limit);
+    const mapped = transactions.map(mapTransactionForAPI);
 
     res.json({
-      transactions,
-      count: transactions.length
+      transactions: mapped,
+      count: mapped.length
     });
   } catch (error) {
     next(error);

@@ -3,6 +3,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { ledgerService } from '../services/LedgerService';
 import { priceService } from '../services/PriceService';
 import { AppError, InvalidAmountError } from '../utils/errors';
+import { mapTransactionForAPI } from '../utils/serializers';
 
 const router = Router();
 
@@ -57,9 +58,14 @@ router.post('/buy', authenticate, async (req: AuthRequest, res, next) => {
       }
     );
 
+    const balances = {
+      NGN: parseFloat(await ledgerService.getBalance(userId, 'NGN')),
+      [cryptoAsset]: parseFloat(await ledgerService.getBalance(userId, cryptoAsset))
+    };
+
     res.json({
       message: `Bought ${cryptoAmount.toFixed(8)} ${cryptoAsset}`,
-      transaction,
+      transaction: mapTransactionForAPI(transaction),
       details: {
         cryptoAsset,
         cryptoAmount: cryptoAmount.toFixed(8),
@@ -67,10 +73,7 @@ router.post('/buy', authenticate, async (req: AuthRequest, res, next) => {
         price,
         timestamp: new Date().toISOString()
       },
-      balances: {
-        NGN: await ledgerService.getBalance(userId, 'NGN'),
-        [cryptoAsset]: await ledgerService.getBalance(userId, cryptoAsset)
-      }
+      balances
     });
   } catch (error) {
     next(error);
@@ -128,9 +131,14 @@ router.post('/sell', authenticate, async (req: AuthRequest, res, next) => {
       }
     );
 
+    const balances = {
+      NGN: parseFloat(await ledgerService.getBalance(userId, 'NGN')),
+      [cryptoAsset]: parseFloat(await ledgerService.getBalance(userId, cryptoAsset))
+    };
+
     res.json({
       message: `Sold ${cryptoAmount} ${cryptoAsset}`,
-      transaction,
+      transaction: mapTransactionForAPI(transaction),
       details: {
         cryptoAsset,
         cryptoAmount,
@@ -138,10 +146,7 @@ router.post('/sell', authenticate, async (req: AuthRequest, res, next) => {
         price,
         timestamp: new Date().toISOString()
       },
-      balances: {
-        NGN: await ledgerService.getBalance(userId, 'NGN'),
-        [cryptoAsset]: await ledgerService.getBalance(userId, cryptoAsset)
-      }
+      balances
     });
   } catch (error) {
     next(error);

@@ -22,7 +22,8 @@ router.post('/signup', async (req, res, next) => {
     res.json({
       message: 'Account created successfully',
       user: data.user,
-      session: data.session
+      session: data.session,
+      token: data.session?.access_token || null
     });
   } catch (error) {
     next(error);
@@ -48,7 +49,8 @@ router.post('/login', async (req, res, next) => {
     res.json({
       message: 'Logged in successfully',
       user: data.user,
-      session: data.session
+      session: data.session,
+      token: data.session?.access_token || null
     });
   } catch (error) {
     next(error);
